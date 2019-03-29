@@ -6,12 +6,11 @@ from Board import Board
 
 def unpack(linear):
 
-    settings = np.zeros((9, 9), int)
+    settings = [[0 for _ in range(9)] for _ in range(9)]
     for i in range(81):
         row = i // 9
         col = i % 9
-        settings[row ,col] = int(linear[i])
-
+        settings[row][col] = int(linear[i])
 
     return settings
 #
@@ -20,23 +19,17 @@ def unpack(linear):
 from tkinter import *
 
 class Application(Frame):
-    def iterate(self):
-        self.board.solve()
+
+    def cancelCells(self):
+        self.board.checkCancellations()
         self.drawPuzzle()
 
-    def oops(self):
-        self.board.errorSearch()
+    def unique(self):
+        self.board.checkUnique()
         self.drawPuzzle()
 
-    def update(self):
-
-        settings = 0
-        if self.boards[self.boardNumber]:
-            settings = self.boards[self.boardNumber]
-            settings = unpack(settings)
-            self.board.resetBoard(settings)
-            self.board.solve()
-            self.boardNumber += 1
+    def pairs(self):
+        self.board.checkHidden()
         self.drawPuzzle()
 
 
@@ -48,27 +41,25 @@ class Application(Frame):
 
         self.QUIT.pack({"side": "left"})
 
+        self.cancelButton = Button(self)
+        self.cancelButton["text"] = "cancel"
+        self.cancelButton["fg"] = "red"
+        self.cancelButton["command"] = self.cancelCells
+        self.cancelButton.pack({"side": "left"})
 
+        self.uniqueButton = Button(self)
+        self.uniqueButton["text"] = "unique"
+        self.uniqueButton["fg"] = "red"
+        self.uniqueButton["command"] = self.unique
 
-        self.hi_there = Button(self)
-        self.hi_there["text"] = "run",
-        self.hi_there["command"] = self.iterate
+        self.uniqueButton.pack({"side": "left"})
 
-        self.hi_there.pack({"side": "left"})
+        self.pairsButton = Button(self)
+        self.pairsButton["text"] = "pairs"
+        self.pairsButton["fg"] = "red"
+        self.pairsButton["command"] = self.pairs
 
-        self.cancel = Button(self)
-        self.cancel["text"] = "special",
-        self.cancel["command"] = self.oops
-        self.cancel.pack({"side": "left"})
-
-        self.yop = Button(self)
-        self.yop["text"] = "update",
-        self.yop["command"] = self.update
-        self.yop.pack({"side": "left"})
-
-
-
-
+        self.pairsButton.pack({"side": "left"})
 
 
 
@@ -81,72 +72,47 @@ class Application(Frame):
         self.canvas.create_line(2*diff, 0, 2*diff, self.canvasHeight, width=2)
         self.canvas.create_line(0, diff, self.canvasHeight, diff, width=2)
         self.canvas.create_line(0, 2*diff, self.canvasHeight, 2*diff, width=2)
-        self.canvas.create_text(0, self.canvasHeight // 2, text=selected)
 
     def callback(self, event):
         self.canvas.focus_set()
         print("clicked at", event.x, event.y)
         self.board.selectCell(event.x, event.y, self.canvas)
-        #self.drawPuzzle()
+
 
     def key(self, event):
         print("pressed", int(event.char))
-        if int(event.char) in range(10):
-            print('made it in')
-            self.board.changeCell(int(event.char))
-            self.drawPuzzle()
-        else:
-            print('not working')
+
 
     def __init__(self, master=None):
         Frame.__init__(self, master)
-        self.check = []
-        for i in range(10):
-            self.check.append(str(i))
-        print(self.check)
 
         self.canvasWidth = 600
         self.canvasHeight = self.canvasWidth
 
-        a = np.array([[1,2,3],[4,5,6],[7,8,9]])
-        print(a)
-        a.T
-        print(a)
-
-
-
         self.canvas = Canvas(root, width=self.canvasWidth, height=self.canvasHeight)
-        #self.canvas.pack()
         self.canvas.bind("<Key>", self.key)
         self.canvas.bind("<Button-1>", self.callback)
 
         self.canvas.pack()
         self.pack()
-        self.createWidgets()
-        settings = np.zeros((9, 9), int)
 
-        self.board = Board(self.canvasWidth, settings)
+        settings = [[0 for _ in range(9)] for _ in range(9)]
 
         self.boards = []
         self.boardNumber = 1
-        with open('hardSudoku.txt') as file:
 
+        with open('hardSudoku.txt') as file:
             linear = file.readline()
-            self.boards.append(linear)
-            settings = unpack(linear)
-            self.board.resetBoard(settings)
-            #self.board.solve()
+            self.boards.append(unpack(linear))
             while linear:
                 linear = file.readline()
-                self.boards.append(linear)
-        #linear = '0' * 81
-        #settings = unpack(linear)
-        #self.board.resetBoard(settings)
+                if len(linear) == 81:
+                    self.boards.append(unpack(linear))
+
+        self.board = Board(self.canvasWidth, self.boards[0])
 
 
-
-
-        self.board.printBoard()
+        self.createWidgets()
 
         #print('Solved {0:d}/{1:d}'.format(count, total))
 
